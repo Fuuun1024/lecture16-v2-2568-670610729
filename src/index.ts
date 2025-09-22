@@ -4,6 +4,8 @@ import express, {
   type Response,
 } from "express";
 
+import morgan from "morgan";
+
 // import database
 import { students } from "./db/db.js";
 import {
@@ -15,37 +17,42 @@ import type { Student } from "./libs/types.js";
 
 const app = express();
 const port = 3000;
+// morgan middlewares
+//app.use(morgan("dev"));
+app.use(morgan("combined"));
 
 // middlewares
+// แปลง JSON request body ให้กลายเป็น JavaScript object แล้วเอาไปเก็บไว้ที่ req.body
 app.use(express.json());
 
 // Endpoints
+// GET /
 app.get("/", (req: Request, res: Response) => {
   res.send("API services for Student Data");
 });
 
 // GET /students
 // get students (by program)
-app.get("/students", (req: Request, res: Response) => {
+app.get("/students", (req: Request, res: Response) => { //res เป็นตัวแปรที่ใช้ส่งข้อมูลให้ผู้ใช้
   try {
-    const program = req.query.program;
+    const program = req.query.program; // query คือ ?promgram=CPE
 
-    if (program) {
+    if (program) { // http://localhost:3000/students?program=CPE
       let filtered_students = students.filter(
         (student) => student.program === program
       );
-      return res.json({
+      return res.status(200).json({
         success: true,
         data: filtered_students,
       });
-    } else {
-      return res.json({
+    } else { // http://localhost:3000/students
+      return res.status(200).json({
         success: true,
         data: students,
       });
     }
   } catch (err) {
-    return res.json({
+    return res.status(500).json({
       success: false,
       message: "Something is wrong, please try again",
       error: err,
@@ -73,7 +80,7 @@ app.post("/students", (req: Request, res: Response) => {
       (student) => student.studentId === body.studentId
     );
     if (found) {
-      return res.json({
+      return res.status(409).json({
         success: false,
         message: "Student is already exists",
       });
@@ -86,7 +93,7 @@ app.post("/students", (req: Request, res: Response) => {
     // add response header 'Link'
     res.set("Link", `/students/${new_student.studentId}`);
 
-    return res.json({
+    return res.status(201).json({
       success: true,
       data: new_student,
     });
